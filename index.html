@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stika 3a - Kafli 1: Tölur og reikningur</title>
+    
+    <!-- Sækjum React og Tailwind af netinu -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* Smá hreyfingar */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-100 min-h-screen font-sans text-slate-800">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (Einfölduð SVG til að sleppa við innflutning) ---
+        const Icons = {
+            Play: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
+            Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>,
+            Calc: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></svg>,
+            Hash: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>,
+            Minus: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+            Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>,
+            Trophy: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M7 4h10"></path><path d="M17 4v3a5 5 0 0 1-10 0V4"></path><path d="M17 4a5 5 0 0 0 4 4v2a5 5 0 0 1-10 0V8"></path><path d="M7 4a5 5 0 0 1-4 4v2a5 5 0 0 0 10 0V8"></path></svg>,
+            Thermometer: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>,
+            List: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>,
+            Percent: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>,
+            Eye: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
+            Wallet: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path></svg>,
+            ArrowRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        };
+
+        // --- SPURNINGAGRUNNUR (KAFLI 1) ---
+        const questionsData = [
+            // SÆTISGILDI MEÐ TUGABROTUM
+            {
+                id: 105, topic: "Sætisgildi", type: "multiple-choice",
+                question: "Leystu töluna 65.023,451 upp eftir sætum. Hvað táknar hver tölustafur?",
+                options: [
+                    "60.000 + 5.000 + 20 + 3 + 0,4 + 0,05 + 0,001",
+                    "65.000 + 23 + 0,451",
+                    "60.000 + 5.000 + 200 + 3 + 0,4 + 0,5 + 0,1",
+                    "6.000 + 500 + 20 + 3 + 0,4 + 0,05 + 0,001"
+                ],
+                correctIndex: 0,
+                explanation: "Heilu tölurnar: 60.000 + 5.000 + 0 + 20 + 3.\nTugabrotin: 4 er 0,4 (tíundu), 5 er 0,05 (hundraðshlutar) og 1 er 0,001 (þúsundustu).",
+                icon: <Icons.Hash />
+            },
+            // SÆTISGILDI
+            {
+                id: 101, topic: "Sætisgildi", type: "multiple-choice",
+                question: "Leystu töluna 326 upp eftir sætum.",
+                options: [
+                    "300 + 20 + 6",
+                    "3 + 2 + 6",
+                    "30 + 20 + 6",
+                    "300 + 2 + 60"
+                ],
+                correctIndex: 0,
+                explanation: "Talan 3 er í hundraðasæti (300), 2 er í tugasæti (20) og 6 er í einingasæti (6).",
+                icon: <Icons.Hash />
+            },
+            {
+                id: 102, topic: "Sætisgildi", type: "multiple-choice",
+                question: "Í tölunni 670.042, hvað táknar tölustafurinn 7?",
+                options: ["7.000 (sjö þúsund)", "70.000 (sjötíu þúsund)", "700 (sjö hundruð)", "7 (sjö)"],
+                correctIndex: 1,
+                explanation: "Tölustafurinn 7 er í tugþúsundasæti. Gildi hans er því 7 · 10.000 = 70.000.",
+                icon: <Icons.Hash />
+            },
+            // ORÐADÆMI
+            {
+                id: 103, topic: "Orðadæmi", type: "multiple-choice",
+                question: "Andri á 1750 kr. Hann keypti humarsúpu fyrir 867 kr. og fékk 250 kr. fyrir vöfflusölu. Hve mikið á hann afgangs?",
+                options: ["1133 kr.", "633 kr.", "883 kr.", "2000 kr."],
+                correctIndex: 0,
+                explanation: "Byrjun: 1750 kr. \nEftir súpu: 1750 - 867 = 883 kr. \nEftir vöfflur: 883 + 250 = 1133 kr.",
+                icon: <Icons.Wallet />
+            },
+            // TUGABROT
+            {
+                id: 104, topic: "Tugabrot", type: "multiple-choice", 
+                question: "Reiknaðu dæmið: 1367,89 + 345,452 - 1111,120",
+                options: ["602,222", "601,222", "702,222", "599,122"],
+                correctIndex: 0,
+                explanation: "Fyrst leggjum við saman: 1367,89 + 345,452 = 1713,342. \nSíðan drögum við frá: 1713,342 - 1111,120 = 602,222.",
+                icon: <Icons.Calc />
+            },
+            {
+                id: 1, topic: "Tugakerfið", type: "multiple-choice",
+                question: "Hvert er gildi tölustafsins 4 í tölunni 14.350?",
+                options: ["4", "40", "400", "4000"],
+                correctIndex: 3,
+                explanation: "Tölustafurinn 4 er í þúsunda sætinu. Gildi hans er því 4 · 1000 = 4000.",
+                icon: <Icons.Hash />
+            },
+            {
+                id: 2, topic: "Tugabrot", type: "input",
+                question: "Skrifaðu töluna 'þrír hundraðshlutar' sem tugabrot (kommutölu).",
+                acceptedAnswers: ["0,03", "0.03", ",03"], 
+                explanation: "Hundraðshlutar eru tveimur sætum aftan við kommu. 0,3 er þrír tíundu, en 0,03 er þrír hundraðshlutar.",
+                icon: <Icons.Percent />
+            },
+            // NEIKVÆÐAR TÖLUR
+            {
+                id: 3, topic: "Neikvæðar tölur", type: "multiple-choice",
+                question: "Um morguninn var hitinn 4°C. Um kvöldið hafði kólnað um 7°C. Hver var hitinn þá?",
+                options: ["3°C", "-3°C", "-4°C", "11°C"],
+                correctIndex: 1,
+                explanation: "Við byrjum í 4 og förum niður um 7. Reikningsdæmið er: 4 - 7 = -3.",
+                icon: <Icons.Thermometer />
+            },
+            {
+                id: 4, topic: "Neikvæðar tölur", type: "input",
+                question: "Hver er mismunurinn á tölunum 5 og -3?",
+                acceptedAnswers: ["8"],
+                explanation: "Mismunur þýðir að draga frá. Dæmið er: 5 - (-3). Mínus og mínus verða plús. 5 + 3 = 8.",
+                icon: <Icons.Minus />
+            },
+            // RAÐA TÖLUM
+            {
+                id: 5, topic: "Raða tölum", type: "multiple-choice",
+                question: "Veldu þá runu þar sem tölunum er raðað frá MINNSTU til STÆRSTU.",
+                options: [
+                    "-5, -2, 0, 3",
+                    "-2, -5, 0, 3",
+                    "0, -2, -5, 3",
+                    "3, 0, -2, -5"
+                ],
+                correctIndex: 0,
+                explanation: "Í neikvæðum tölum er talan minni eftir því sem hún er lengra frá núlli (meira frost). -5 er minna en -2.",
+                icon: <Icons.List />
+            },
+            // NÁMUNDUN
+            {
+                id: 6, topic: "Námundun", type: "multiple-choice",
+                question: "Námundaðu töluna 12,839 að einum aukastaf.",
+                options: ["12,8", "12,9", "13,0", "12,84"],
+                correctIndex: 0,
+                explanation: "Við viljum einn staf aftan við kommu (8). Við skoðum næsta staf (3). Af því 3 er lægra en 5 breytist 8 ekki. Svarið er 12,8.",
+                icon: <Icons.Calc />
+            },
+            // FORGANGSRÖÐ
+            {
+                id: 8, topic: "Forgangsröðun", type: "multiple-choice",
+                question: "Reiknaðu: 5 + 5 · 5",
+                options: ["50", "30", "25", "10"],
+                correctIndex: 1,
+                explanation: "Margföldun hefur forgang! Fyrst reiknum við 5 · 5 = 25. Síðan 5 + 25 = 30.",
+                icon: <Icons.Calc />
+            },
+            {
+                id: 9, topic: "Svigar", type: "input",
+                question: "Reiknaðu dæmið: 20 - (4 + 6)",
+                acceptedAnswers: ["10"],
+                explanation: "Svigar hafa alltaf forgang. (4 + 6) = 10. Þá er dæmið 20 - 10 = 10.",
+                icon: <Icons.Calc />
+            },
+            // TALNARUNUR
+            {
+                id: 11, topic: "Talnarunur", type: "input",
+                question: "Hvaða tala vantar: 2, 5, 8, __, 14?",
+                acceptedAnswers: ["11"],
+                explanation: "Reglan er +3. 2+3=5, 5+3=8. Þá er næsta tala 8+3=11.",
+                icon: <Icons.ArrowRight />
+            },
+            // TUGABROT INPUT
+            {
+                id: 13, topic: "Tugabrot", type: "input",
+                question: "Reiknaðu: 4,5 + 2,15",
+                acceptedAnswers: ["6,65", "6.65"],
+                explanation: "Passaðu að komman sé beint undir kommu. 4,50 + 2,15 = 6,65",
+                icon: <Icons.Calc />
+            },
+            // STÓRAR TÖLUR
+            {
+                id: 14, topic: "Stórar tölur", type: "multiple-choice",
+                question: "Hvað er milljón mínus einn?",
+                options: ["999.999", "999.000", "100.000", "900.000"],
+                correctIndex: 0,
+                explanation: "1.000.000 - 1 = 999.999.",
+                icon: <Icons.Hash />
+            },
+            // SAMANBURÐUR
+            {
+                id: 17, topic: "Samanburður", type: "multiple-choice",
+                question: "Hvor talan er stærri: 3,4 eða 3,39?",
+                options: ["3,4", "3,39", "Jafn stórar"],
+                correctIndex: 0,
+                explanation: "Bættu núlli við til að bera saman: 3,40 og 3,39. 40 er stærra en 39.",
+                icon: <Icons.Eye />
+            }
+        ];
+
+        // --- GAME COMPONENT ---
+        function MathGameV4() {
+            const [gameState, setGameState] = useState('start');
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [inputAnswer, setInputAnswer] = useState('');
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [showFeedback, setShowFeedback] = useState(false);
+            const [isCorrect, setIsCorrect] = useState(false);
+            const [randomizedQuestions, setRandomizedQuestions] = useState([]);
+
+            useEffect(() => {
+                setRandomizedQuestions([...questionsData].sort(() => 0.5 - Math.random()));
+            }, []);
+
+            const startGame = () => {
+                setRandomizedQuestions([...questionsData].sort(() => 0.5 - Math.random()));
+                setGameState('playing');
+                setCurrentQuestionIndex(0);
+                setScore(0);
+                resetState();
+            };
+
+            const resetState = () => {
+                setInputAnswer('');
+                setSelectedOption(null);
+                setShowFeedback(false);
+                setIsCorrect(false);
+            };
+
+            const checkInput = (user, correct) => {
+                if(!user) return false;
+                const normalize = (str) => str.toLowerCase().replace(/km|dl|kr|\s/g, '').replace(/\./g, ',');
+                const userNorm = normalize(user);
+                return correct.some(c => normalize(c) === userNorm);
+            };
+
+            const submit = () => {
+                const q = randomizedQuestions[currentQuestionIndex];
+                let correct = false;
+                if(q.type === 'input') {
+                    // Check against accepted answers (handling both . and ,)
+                    const userNorm = inputAnswer.replace(/\s/g, '').replace('.', ',').toLowerCase();
+                    correct = q.acceptedAnswers.some(ans => 
+                        ans.replace(/\s/g, '').replace('.', ',').toLowerCase() === userNorm
+                    );
+                } else {
+                    correct = selectedOption === q.correctIndex;
+                }
+
+                setIsCorrect(correct);
+                if(correct) setScore(s => s + 1);
+                setShowFeedback(true);
+            };
+
+            const next = () => {
+                if(currentQuestionIndex < randomizedQuestions.length - 1) {
+                    setCurrentQuestionIndex(prev => prev + 1);
+                    resetState();
+                } else {
+                    setGameState('finished');
+                }
+            };
+
+            if(randomizedQuestions.length === 0) return null;
+            const q = randomizedQuestions[currentQuestionIndex];
+
+            // --- START SCREEN ---
+            if(gameState === 'start') return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                    <div className="bg-white p-10 rounded-3xl shadow-2xl max-w-lg w-full text-center animate-fadeIn">
+                        <div className="w-28 h-28 bg-blue-600 rounded-3xl rotate-3 flex items-center justify-center mx-auto mb-8 shadow-blue-200 shadow-xl">
+                            <div className="text-white"><Icons.Calc /></div>
+                        </div>
+                        <h1 className="text-4xl font-extrabold text-slate-800 mb-4 tracking-tight">Stærðfræðileikur</h1>
+                        <p className="text-lg text-slate-500 mb-10 max-w-md leading-relaxed">
+                            Æfðu þig fyrir prófið! <br/>
+                            Sætisgildi, orðadæmi, tugabrot og fleira úr 1.kafla.
+                        </p>
+                        <button onClick={startGame} className="bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 px-10 rounded-2xl shadow-xl transition-transform transform hover:-translate-y-1 active:scale-95 flex items-center justify-center mx-auto">
+                            <span className="mr-3"><Icons.Play /></span> Byrja leik
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // --- FINISHED SCREEN ---
+            if(gameState === 'finished') return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                    <div className="bg-white p-10 rounded-3xl shadow-2xl max-w-lg w-full text-center animate-fadeIn">
+                        <div className="w-32 h-32 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-8 ring-8 ring-yellow-50">
+                            <div className="text-yellow-600"><Icons.Trophy /></div>
+                        </div>
+                        <h2 className="text-4xl font-bold text-slate-800 mb-2">Æfingu Lokið!</h2>
+                        <div className="text-6xl font-black text-blue-600 mb-4">{score} <span className="text-2xl text-slate-400 font-medium">/ {randomizedQuestions.length}</span></div>
+                        <p className="text-slate-700 font-medium mb-8">
+                            {score === randomizedQuestions.length 
+                            ? "Fullt hús stiga! Vel gert! 🌟" 
+                            : "Góður árangur! Æfingin skapar meistarann."}
+                        </p>
+                        <button onClick={startGame} className="bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 font-bold py-4 px-10 rounded-2xl transition flex items-center justify-center mx-auto shadow-sm">
+                            <span className="mr-3"><Icons.Refresh /></span> Taka nýjan leik
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // --- PLAYING SCREEN ---
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                    <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+                        {/* Progress */}
+                        <div className="bg-slate-100 h-2 w-full">
+                            <div className="bg-blue-600 h-full transition-all duration-500" style={{width: `${(currentQuestionIndex / randomizedQuestions.length) * 100}%`}}></div>
+                        </div>
+                        
+                        {/* Header */}
+                        <div className="px-6 py-4 flex justify-between items-center border-b border-slate-100">
+                            <div className="text-sm font-bold text-slate-400 uppercase">Dæmi {currentQuestionIndex + 1} / {randomizedQuestions.length}</div>
+                            <div className="flex items-center space-x-2 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100 text-yellow-700 font-bold text-sm">
+                                <span className="mr-1"><Icons.Trophy /></span>
+                                <span>{score} stig</span>
+                            </div>
+                        </div>
+
+                        <div className="p-6 md:p-10">
+                            {/* Topic */}
+                            <div className="flex justify-center mb-6">
+                                <div className="inline-flex items-center space-x-2 bg-slate-100 px-4 py-1.5 rounded-full text-sm font-semibold text-slate-600 shadow-sm">
+                                    <span className="text-blue-500">{q.icon}</span>
+                                    <span>{q.topic}</span>
+                                </div>
+                            </div>
+
+                            {/* Question */}
+                            <h2 className="text-2xl md:text-3xl font-bold text-center text-slate-800 mb-10 leading-snug">{q.question}</h2>
+
+                            {/* Input: Text */}
+                            {q.type === 'input' && (
+                                <div className="mb-10 flex justify-center">
+                                    <input 
+                                        type="text" 
+                                        value={inputAnswer}
+                                        onChange={e => setInputAnswer(e.target.value)}
+                                        onKeyDown={e => {
+                                            if(e.key === 'Enter') {
+                                                if(!showFeedback && inputAnswer) submit();
+                                                else if(showFeedback) next();
+                                            }
+                                        }}
+                                        disabled={showFeedback}
+                                        placeholder="Skrifaðu svar..."
+                                        className={`w-full max-w-xs text-center text-2xl p-4 rounded-xl border-2 outline-none transition-all shadow-inner ${
+                                            showFeedback 
+                                            ? (isCorrect ? 'border-green-500 bg-green-50 text-green-800' : 'border-red-500 bg-red-50 text-red-800')
+                                            : 'border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'
+                                        }`}
+                                        autoFocus
+                                    />
+                                </div>
+                            )}
+
+                            {/* Input: Multiple Choice */}
+                            {(q.type === 'multiple-choice') && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                                    {q.options.map((opt, idx) => {
+                                        let cls = "border-slate-200 hover:border-blue-400 hover:bg-slate-50 text-slate-700";
+                                        if(selectedOption === idx) cls = "border-blue-500 bg-blue-50 text-blue-900 ring-2 ring-blue-200";
+                                        if(showFeedback) {
+                                            if(idx === q.correctIndex) cls = "border-green-500 bg-green-100 text-green-900 ring-2 ring-green-200 font-bold";
+                                            else if(selectedOption === idx) cls = "border-red-500 bg-red-100 text-red-900 opacity-70";
+                                            else cls = "border-slate-100 text-slate-400 opacity-50";
+                                        }
+                                        return (
+                                            <button key={idx} onClick={() => !showFeedback && setSelectedOption(idx)} disabled={showFeedback}
+                                                className={`relative p-5 rounded-2xl text-lg font-medium border-2 transition-all text-left flex justify-between items-center ${cls}`}>
+                                                <span>{opt}</span>
+                                                {showFeedback && idx === q.correctIndex && <span className="text-green-600"><Icons.Check /></span>}
+                                                {showFeedback && selectedOption === idx && idx !== q.correctIndex && <span className="text-red-500"><Icons.X /></span>}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Action Bar */}
+                            <div className="flex justify-center md:justify-end">
+                                {!showFeedback ? (
+                                    <button onClick={submit} disabled={q.type === 'input' ? !inputAnswer : selectedOption === null}
+                                        className={`w-full md:w-auto py-4 px-10 rounded-xl font-bold text-white text-lg transition-all shadow-lg ${
+                                            (q.type === 'input' ? inputAnswer : selectedOption !== null) 
+                                            ? 'bg-blue-600 hover:bg-blue-700 hover:-translate-y-1' 
+                                            : 'bg-slate-300 cursor-not-allowed shadow-none'
+                                        }`}>
+                                        Svara
+                                    </button>
+                                ) : (
+                                    <button onClick={next} autoFocus className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white py-4 px-10 rounded-xl font-bold shadow-lg flex items-center justify-center transition-all hover:-translate-y-1">
+                                        <span>{currentQuestionIndex < randomizedQuestions.length - 1 ? "Næsta spurning" : "Sjá niðurstöður"}</span>
+                                        <span className="ml-3"><Icons.ArrowRight /></span>
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Feedback */}
+                            {showFeedback && (
+                                <div className={`mt-8 p-6 rounded-2xl animate-fadeIn ${isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
+                                    <div className="flex gap-4">
+                                        <div className={`mt-1 p-2 rounded-full h-fit ${isCorrect ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'}`}>
+                                            {isCorrect ? <Icons.Check /> : <Icons.X />}
+                                        </div>
+                                        <div>
+                                            <h3 className={`font-bold text-lg mb-2 ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>{isCorrect ? 'Rétt!' : 'Því miður...'}</h3>
+                                            <p className="text-slate-700 leading-relaxed text-lg whitespace-pre-line">{q.explanation}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MathGameV4 />);
+    </script>
+</body>
+</html>
