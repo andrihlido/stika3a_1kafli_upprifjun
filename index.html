@@ -1,448 +1,361 @@
-import React, { useState, useEffect } from 'react';
-import { Play, ArrowRight, CheckCircle, XCircle, Calculator, Percent, Divide, Layers, Shuffle, Trophy, RefreshCcw, Scale, Utensils, Car, Droplets, Circle } from 'lucide-react';
-
-/**
- * GAGNATÓLIN - STIKA 3A - KAFLI 3: Margföldun, deiling og hlutföll
- * Uppfært með nýjum dæmum skv. beiðni.
- */
-const questionsData = [
-  // --- NÝ DÆMI: SILJA OG SAFINN (HLUTFÖLL) ---
-  {
-    id: 101,
-    topic: "Hlutföll (Safi)",
-    type: "input",
-    question: "Silja blandar saman safa og vatni í hlutfallinu 1 : 6. Hve mikið vatn þarf hún á móti 3 dl af safa?",
-    acceptedAnswers: ["18", "18 dl"],
-    explanation: "Hlutfallið er 1 á móti 6. Það þýðir að fyrir hvern dl af safa þarf 6 dl af vatni. \n3 · 6 = 18 dl.",
-    icon: <Droplets className="w-6 h-6 text-blue-500" />
-  },
-  {
-    id: 102,
-    topic: "Hlutföll (Safi)",
-    type: "input",
-    question: "Hlutfallið er 1 : 6. Hve mikið vatn þarf Silja á móti 1,5 dl af safa?",
-    acceptedAnswers: ["9", "9 dl"],
-    explanation: "Reiknum: 1,5 · 6. \n1 · 6 = 6 og 0,5 · 6 = 3. \n6 + 3 = 9 dl.",
-    icon: <Droplets className="w-6 h-6 text-blue-500" />
-  },
-
-  // --- NÝTT DÆMI: MYNDRÆN FRAMSETNING (BOLTAR) ---
-  {
-    id: 103,
-    topic: "Hlutföll (Myndrænt)",
-    type: "visual-ratio",
-    question: "Finndu hlutfallið milli grænna og fjólublárra boltana.",
-    // Data to draw the visual
-    visualData: { green: 4, purple: 12 }, 
-    options: ["1 : 4", "1 : 3", "1 : 2", "4 : 16"],
-    correctIndex: 1,
-    explanation: "Það eru 4 grænir og 12 fjólubláir. \nHlutfallið er 4 : 12. \nVið getum stytt það með 4 (deilt með 4 báðum megin): 1 : 3.",
-    icon: <Circle className="w-6 h-6 text-purple-500" />
-  },
-
-  // --- NÝTT DÆMI: HRAÐI OG VEGALENGD ---
-  {
-    id: 104,
-    topic: "Hlutfallareikningur",
-    type: "input",
-    question: "Bíl er ekið 225 km vegalengd á 3 klukkutímum. Hve langt fer bíllinn á 5 klukkustundum með sama hraða?",
-    acceptedAnswers: ["375", "375 km"],
-    explanation: "Fyrst finnum við hvað hann fer langt á 1 tíma: 225 : 3 = 75 km/klst. \nSvo margföldum við með 5 tímum: 75 · 5 = 375 km.",
-    icon: <Car className="w-6 h-6 text-red-500" />
-  },
-
-  // --- NÝ DÆMI: FJÖLDI MÖGULEIKA (COMBINATORICS) ---
-  {
-    id: 105,
-    topic: "Fjöldi möguleika",
-    type: "multiple-choice",
-    question: "Í sjoppunni eru 3 tegundir af pylsum og 2 tegundir af brauði. Hve margir eru möguleikarnir á að velja sér pylsu?",
-    options: ["5 möguleikar", "6 möguleikar", "9 möguleikar", "1 möguleiki"],
-    correctIndex: 1,
-    explanation: "Þú margfaldar saman fjölda valmöguleika: 3 (pylsur) · 2 (brauð) = 6 mismunandi samsetningar.",
-    icon: <Utensils className="w-6 h-6 text-orange-500" />
-  },
-  {
-    id: 106,
-    topic: "Fjöldi möguleika",
-    type: "input",
-    question: "Á veitingahúsi eru 4 forréttir, 5 aðalréttir og 2 eftirréttir. Hve margar mismunandi máltíðir (samsetningar) er hægt að velja?",
-    acceptedAnswers: ["40"],
-    explanation: "Við margföldum allt saman: 4 · 5 · 2. \n4 · 5 = 20. \n20 · 2 = 40 möguleikar.",
-    icon: <Utensils className="w-6 h-6 text-orange-500" />
-  },
-
-  // --- NÝTT DÆMI: FRUMTÖLUR ---
-  {
-    id: 107,
-    topic: "Frumtölur",
-    type: "multiple-choice",
-    question: "Hverjar af eftirfarandi tölum eru frumtölur? (24, 45, 61, 101)",
-    options: ["24 og 45", "61 og 101", "Aðeins 101", "45 og 61"],
-    correctIndex: 1,
-    explanation: "Frumtölur eru tölur sem aðeins er hægt að deila með 1 og sjálfri sér. \n24 er hægt að deila með 2, 3, 4, 6... (ekki frumtala). \n45 er hægt að deila með 5 og 9 (ekki frumtala). \n61 og 101 eru frumtölur.",
-    icon: <Layers className="w-6 h-6 text-emerald-600" />
-  },
-
-  // --- ELDRI DÆMI (FYRIR FJÖLBREYTNI) ---
-  {
-    id: 1,
-    topic: "Margföldun tugabrota",
-    type: "input",
-    question: "Reiknaðu dæmið: 0,5 · 0,4",
-    acceptedAnswers: ["0,2", "0,20"], 
-    explanation: "Margfaldaðu tölurnar án kommu: 5 · 4 = 20. \nTeldu svo aukastafina (samtals 2). \nSvarið er 0,20 sem er nákvæmlega það sama og 0,2.",
-    icon: <Calculator className="w-6 h-6 text-emerald-600" />
-  },
-  {
-    id: 108,
-    topic: "Margföldun",
-    type: "input",
-    question: "Reiknaðu: 17 · 35",
-    acceptedAnswers: ["595"],
-    explanation: "Það er gott að skipta dæminu upp: \n10 · 35 = 350 \n7 · 35 = 245 \nLagt saman: 350 + 245 = 595.",
-    icon: <Calculator className="w-6 h-6 text-blue-500" />
-  },
-  {
-    id: 109,
-    topic: "Margföldun tugabrota",
-    type: "input",
-    question: "Reiknaðu: 6 · 3,4",
-    acceptedAnswers: ["20,4", "20.4"],
-    explanation: "Gott að hugsa þetta í tvennu lagi:\n6 · 3 = 18\n6 · 0,4 = 2,4\nLagt saman: 18 + 2,4 = 20,4.",
-    icon: <Calculator className="w-6 h-6 text-emerald-600" />
-  },
-  {
-    id: 8,
-    topic: "Forgangsröð",
-    type: "multiple-choice",
-    question: "Reiknaðu: 4 + 4 · 4 - 4",
-    options: ["28", "16", "12", "0"],
-    correctIndex: 1,
-    explanation: "Mundu regluna: Margföldun fyrst! \n1. 4 · 4 = 16. \n2. Dæmið er nú: 4 + 16 - 4. \n3. 20 - 4 = 16.",
-    icon: <Calculator className="w-6 h-6 text-red-500" />
-  }
-];
-
-export default function Kafli3Updated() {
-  const [gameState, setGameState] = useState('start'); 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [inputAnswer, setInputAnswer] = useState('');
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [randomizedQuestions, setRandomizedQuestions] = useState([]);
-
-  useEffect(() => {
-    const shuffled = [...questionsData].sort(() => 0.5 - Math.random());
-    setRandomizedQuestions(shuffled);
-  }, []);
-
-  const startGame = () => {
-    const shuffled = [...questionsData].sort(() => 0.5 - Math.random());
-    setRandomizedQuestions(shuffled);
-    setGameState('playing');
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    resetQuestionState();
-  };
-
-  const resetQuestionState = () => {
-    setInputAnswer('');
-    setSelectedOption(null);
-    setShowFeedback(false);
-    setIsCorrect(false);
-  };
-
-  const checkInputAnswer = (userAns, correctAnswers) => {
-    if (!userAns) return false;
-    // Normalize: remove spaces and text units, treat comma and dot equivalently
-    const normalize = (str) => str.toLowerCase().replace(/km|dl|kr|\s/g, '').replace(/,/g, '.');
-    const userNorm = normalize(userAns);
+<!DOCTYPE html>
+<html lang="is">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stika 3a - Kafli 3</title>
     
-    return correctAnswers.some(ans => {
-        const correctNorm = normalize(ans);
-        return userNorm === correctNorm;
-    });
-  };
+    <!-- Sækjum React og Tailwind af netinu -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  const submitAnswer = () => {
-    const currentQ = randomizedQuestions[currentQuestionIndex];
-    let correct = false;
+    <style>
+        /* Smá hreyfingar */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 to-teal-100 min-h-screen font-sans text-slate-800">
 
-    if (currentQ.type === 'input') {
-      correct = checkInputAnswer(inputAnswer, currentQ.acceptedAnswers);
-    } else {
-      correct = selectedOption === currentQ.correctIndex;
-    }
+    <div id="root"></div>
 
-    setIsCorrect(correct);
-    if (correct) setScore(s => s + 1);
-    setShowFeedback(true);
-  };
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-  const nextQuestion = () => {
-    if (currentQuestionIndex < randomizedQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-      resetQuestionState();
-    } else {
-      setGameState('finished');
-    }
-  };
+        // --- ICONS (Einfölduð SVG til að sleppa við innflutning) ---
+        const Icons = {
+            Play: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
+            Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>,
+            Calc: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></svg>,
+            Divide: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="6" r="1"></circle><line x1="5" y1="12" x2="19" y2="12"></line><circle cx="12" cy="18" r="1"></circle></svg>,
+            Utensils: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>,
+            Car: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"></path><circle cx="6.5" cy="16.5" r="2.5"></circle><circle cx="16.5" cy="16.5" r="2.5"></circle></svg>,
+            Droplets: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.8-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"></path><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"></path></svg>,
+            ArrowRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>,
+            Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>,
+            Trophy: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M7 4h10"></path><path d="M17 4v3a5 5 0 0 1-10 0V4"></path><path d="M17 4a5 5 0 0 0 4 4v2a5 5 0 0 1-10 0V8"></path><path d="M7 4a5 5 0 0 1-4 4v2a5 5 0 0 0 10 0V8"></path></svg>,
+            Layers: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !showFeedback && inputAnswer) {
-      submitAnswer();
-    } else if (e.key === 'Enter' && showFeedback) {
-      if (currentQuestionIndex < randomizedQuestions.length - 1) nextQuestion();
-    }
-  };
+        // --- SPURNINGAGRUNNUR (KAFLI 3) ---
+        const questionsData = [
+            // Silja Safi
+            {
+                id: 101, topic: "Hlutföll", type: "input",
+                question: "Silja blandar saman safa og vatni í hlutfallinu 1 : 6. Hve mikið vatn þarf hún á móti 3 dl af safa?",
+                acceptedAnswers: ["18"],
+                explanation: "Hlutfallið er 1 á móti 6. Fyrir 3 dl af safa þarf: 3 · 6 = 18 dl af vatni.",
+                icon: <Icons.Droplets />
+            },
+            {
+                id: 102, topic: "Hlutföll", type: "input",
+                question: "Hlutfallið er 1 : 6. Hve mikið vatn þarf Silja á móti 1,5 dl af safa?",
+                acceptedAnswers: ["9"],
+                explanation: "Reiknum: 1,5 · 6. \n(1 · 6 = 6) og (0,5 · 6 = 3). \n6 + 3 = 9 dl.",
+                icon: <Icons.Droplets />
+            },
+            // Boltar
+            {
+                id: 103, topic: "Hlutföll", type: "visual-ratio",
+                question: "Finndu hlutfallið milli grænna og fjólublárra boltana.",
+                visualData: { green: 4, purple: 12 },
+                options: ["1 : 4", "1 : 3", "1 : 2", "4 : 16"],
+                correctIndex: 1,
+                explanation: "4 grænir og 12 fjólubláir = 4 : 12. \nDeilum með 4 báðum megin: 1 : 3.",
+                icon: <div className="w-6 h-6 bg-purple-500 rounded-full"></div>
+            },
+            // Bíll
+            {
+                id: 104, topic: "Hlutföll", type: "input",
+                question: "Bíl er ekið 225 km vegalengd á 3 klukkutímum. Hve langt fer bíllinn á 5 klukkustundum með sama hraða?",
+                acceptedAnswers: ["375"],
+                explanation: "Fyrst finnum við hraðann á 1 tíma: 225 : 3 = 75 km/klst. \nSvo 5 tíma: 75 · 5 = 375 km.",
+                icon: <Icons.Car />
+            },
+            // Möguleikar
+            {
+                id: 105, topic: "Möguleikar", type: "multiple-choice",
+                question: "Í sjoppunni eru 3 tegundir af pylsum og 2 tegundir af brauði. Hve margir eru möguleikarnir á að velja sér pylsu?",
+                options: ["5", "6", "9", "1"],
+                correctIndex: 1,
+                explanation: "Margföldum valmöguleikana: 3 (pylsur) · 2 (brauð) = 6 möguleikar.",
+                icon: <Icons.Utensils />
+            },
+            {
+                id: 106, topic: "Möguleikar", type: "input",
+                question: "Á veitingahúsi eru 4 forréttir, 5 aðalréttir og 2 eftirréttir. Hve margar mismunandi máltíðir er hægt að velja?",
+                acceptedAnswers: ["40"],
+                explanation: "Margföldum allt saman: 4 · 5 · 2 = 40 möguleikar.",
+                icon: <Icons.Utensils />
+            },
+            // Margföldun
+            {
+                id: 108, topic: "Margföldun", type: "input",
+                question: "Reiknaðu: 17 · 35",
+                acceptedAnswers: ["595"],
+                explanation: "10 · 35 = 350. \n7 · 35 = 245. \n350 + 245 = 595.",
+                icon: <Icons.Calc />
+            },
+            {
+                id: 109, topic: "Margföldun", type: "input",
+                question: "Reiknaðu: 6 · 3,4",
+                acceptedAnswers: ["20.4", "20,4"],
+                explanation: "6 · 3 = 18. \n6 · 0,4 = 2,4. \n18 + 2,4 = 20,4.",
+                icon: <Icons.Calc />
+            },
+            // Tugabrot margföldun
+            {
+                id: 1, topic: "Tugabrot", type: "input",
+                question: "Reiknaðu: 0,5 · 0,4",
+                acceptedAnswers: ["0.2", "0,2", "0.20", "0,20"],
+                explanation: "5 · 4 = 20. \nTveir aukastafir: 0,20 eða 0,2.",
+                icon: <Icons.Calc />
+            },
+            // Forgangsröð
+            {
+                id: 8, topic: "Forgangsröð", type: "multiple-choice",
+                question: "Reiknaðu: 4 + 4 · 4 - 4",
+                options: ["28", "16", "12", "0"],
+                correctIndex: 1,
+                explanation: "Margföldun fyrst! \n4 · 4 = 16. \n4 + 16 - 4 = 16.",
+                icon: <Icons.Calc />
+            },
+            // Frumtölur
+            {
+                id: 107, topic: "Frumtölur", type: "multiple-choice",
+                question: "Hverjar af eftirfarandi tölum eru frumtölur? (24, 45, 61, 101)",
+                options: ["24 og 45", "61 og 101", "Aðeins 101", "45 og 61"],
+                correctIndex: 1,
+                explanation: "61 og 101 eru frumtölur (aðeins deilanlegar með 1 og sjálfri sér).",
+                icon: <Icons.Layers />
+            }
+        ];
 
-  if (randomizedQuestions.length === 0 && gameState !== 'start') return <div>Hleð...</div>;
+        // --- GAME COMPONENT ---
+        function MathGame() {
+            const [gameState, setGameState] = useState('start');
+            const [currentQIndex, setCurrentQIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [inputAnswer, setInputAnswer] = useState('');
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [showFeedback, setShowFeedback] = useState(false);
+            const [isCorrect, setIsCorrect] = useState(false);
+            const [questions, setQuestions] = useState([]);
 
-  const currentQ = randomizedQuestions[currentQuestionIndex];
+            useEffect(() => {
+                setQuestions([...questionsData].sort(() => 0.5 - Math.random()));
+            }, []);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 font-sans text-slate-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-emerald-100">
-        
-        {/* PROGRESS BAR */}
-        {gameState === 'playing' && (
-          <div className="bg-slate-100 h-2 w-full">
-            <div 
-              className="bg-emerald-500 h-full transition-all duration-500 ease-out"
-              style={{ width: `${((currentQuestionIndex) / randomizedQuestions.length) * 100}%` }}
-            />
-          </div>
-        )}
+            const startGame = () => {
+                setQuestions([...questionsData].sort(() => 0.5 - Math.random()));
+                setGameState('playing');
+                setCurrentQIndex(0);
+                setScore(0);
+                resetState();
+            };
 
-        {/* HEADER */}
-        {gameState === 'playing' && (
-          <div className="px-6 py-4 flex justify-between items-center border-b border-slate-100 bg-white">
-            <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-              Dæmi {currentQuestionIndex + 1} / {randomizedQuestions.length}
-            </div>
-            <div className="flex items-center space-x-2 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-              <Trophy className="w-4 h-4 text-emerald-600" />
-              <span className="font-bold text-emerald-700">{score} stig</span>
-            </div>
-          </div>
-        )}
+            const resetState = () => {
+                setInputAnswer('');
+                setSelectedOption(null);
+                setShowFeedback(false);
+                setIsCorrect(false);
+            };
 
-        {/* --- START SCREEN --- */}
-        {gameState === 'start' && (
-          <div className="p-12 text-center flex flex-col items-center animate-fadeIn">
-            <div className="w-28 h-28 bg-emerald-500 rounded-3xl rotate-6 flex items-center justify-center mb-8 shadow-emerald-200 shadow-xl transform transition hover:rotate-12">
-              <Divide className="w-14 h-14 text-white" />
-            </div>
-            <h1 className="text-4xl font-extrabold text-slate-800 mb-4 tracking-tight">Kafli 3</h1>
-            <h2 className="text-2xl font-semibold text-emerald-600 mb-6">Margföldun og Deiling</h2>
-            <p className="text-lg text-slate-500 mb-10 max-w-md leading-relaxed">
-              Æfðu þig í hlutfallareikningi, möguleikum, frumtölum og forgangsröðun.
-            </p>
-            <button 
-              onClick={startGame}
-              className="group bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-4 px-10 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 flex items-center"
-            >
-              <Play className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
-              Byrja Leik
-            </button>
-          </div>
-        )}
+            const checkInput = (user, correct) => {
+                if(!user) return false;
+                const norm = (s) => s.toLowerCase().replace(/km|dl|kr|\s/g, '').replace(/,/g, '.');
+                return correct.some(c => norm(user) === norm(c));
+            };
 
-        {/* --- GAME SCREEN --- */}
-        {gameState === 'playing' && (
-          <div className="p-6 md:p-10">
-            
-            {/* Topic Label */}
-            <div className="flex justify-center mb-6">
-              <div className="inline-flex items-center space-x-2 bg-slate-100 px-4 py-1.5 rounded-full text-sm font-semibold text-slate-600 shadow-sm">
-                {currentQ.icon}
-                <span>{currentQ.topic}</span>
-              </div>
-            </div>
+            const submit = () => {
+                const q = questions[currentQIndex];
+                let correct = false;
+                if(q.type === 'input') correct = checkInput(inputAnswer, q.acceptedAnswers);
+                else correct = selectedOption === q.correctIndex;
 
-            {/* Question Text */}
-            <h2 className="text-2xl font-bold text-center text-slate-800 mb-8 leading-snug">
-              {currentQ.question}
-            </h2>
+                setIsCorrect(correct);
+                if(correct) setScore(s => s + 1);
+                setShowFeedback(true);
+            };
 
-            {/* --- VISUAL COMPONENT FOR RATIO (BALLS) --- */}
-            {currentQ.type === 'visual-ratio' && (
-              <div className="mb-8 p-6 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex flex-wrap justify-center gap-4 mb-4">
-                  {/* Draw Green Balls */}
-                  {Array.from({ length: currentQ.visualData.green }).map((_, i) => (
-                    <div key={`g-${i}`} className="w-10 h-10 rounded-full bg-green-500 shadow-sm border-2 border-green-600 flex items-center justify-center text-white font-bold text-xs">
-                      G
+            const next = () => {
+                if(currentQIndex < questions.length - 1) {
+                    setCurrentQIndex(prev => prev + 1);
+                    resetState();
+                } else {
+                    setGameState('finished');
+                }
+            };
+
+            if(questions.length === 0) return null;
+            const q = questions[currentQIndex];
+
+            // Render Start Screen
+            if(gameState === 'start') return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                    <div className="bg-white p-10 rounded-3xl shadow-2xl max-w-lg w-full text-center animate-fadeIn">
+                        <div className="w-24 h-24 bg-emerald-500 rounded-2xl rotate-6 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                            <div className="text-white"><Icons.Divide /></div>
+                        </div>
+                        <h1 className="text-4xl font-extrabold text-slate-800 mb-2">Kafli 3</h1>
+                        <h2 className="text-xl text-emerald-600 font-bold mb-6">Margföldun og deiling</h2>
+                        <button onClick={startGame} className="bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-3 px-8 rounded-xl shadow-lg transition-transform transform hover:-translate-y-1 active:scale-95 flex items-center justify-center mx-auto">
+                            <span className="mr-2"><Icons.Play /></span> Byrja Leik
+                        </button>
                     </div>
-                  ))}
                 </div>
-                <div className="w-full h-0.5 bg-slate-200 my-4"></div>
-                <div className="flex flex-wrap justify-center gap-4">
-                  {/* Draw Purple Balls */}
-                  {Array.from({ length: currentQ.visualData.purple }).map((_, i) => (
-                    <div key={`p-${i}`} className="w-10 h-10 rounded-full bg-purple-500 shadow-sm border-2 border-purple-600 flex items-center justify-center text-white font-bold text-xs">
-                      F
+            );
+
+            // Render Finished Screen
+            if(gameState === 'finished') return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                    <div className="bg-white p-10 rounded-3xl shadow-2xl max-w-lg w-full text-center animate-fadeIn">
+                        <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <div className="text-yellow-600"><Icons.Trophy /></div>
+                        </div>
+                        <h2 className="text-3xl font-bold text-slate-800 mb-2">Æfingu Lokið!</h2>
+                        <div className="text-5xl font-black text-emerald-600 mb-4">{score} / {questions.length}</div>
+                        <p className="text-slate-600 mb-8">Vel gert! Haltu áfram að æfa þig.</p>
+                        <button onClick={startGame} className="bg-white border-2 border-slate-200 hover:border-emerald-500 text-slate-600 font-bold py-3 px-8 rounded-xl transition flex items-center justify-center mx-auto">
+                            <span className="mr-2"><Icons.Refresh /></span> Spila aftur
+                        </button>
                     </div>
-                  ))}
                 </div>
-                <p className="text-center text-sm text-slate-500 mt-4">Teldu kúlurnar til að finna hlutfallið.</p>
-              </div>
-            )}
+            );
 
-            {/* INPUT AREA: Text Input Type */}
-            {currentQ.type === 'input' && (
-              <div className="mb-10 flex justify-center">
-                <input
-                  type="text"
-                  value={inputAnswer}
-                  onChange={(e) => setInputAnswer(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={showFeedback}
-                  placeholder="Skrifaðu svar..."
-                  className={`
-                    w-full max-w-xs text-center text-2xl p-4 rounded-xl border-2 outline-none transition-all shadow-inner
-                    ${showFeedback 
-                      ? (isCorrect ? 'border-green-500 bg-green-50 text-green-800' : 'border-red-500 bg-red-50 text-red-800')
-                      : 'border-slate-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100'}
-                  `}
-                  autoFocus
-                />
-              </div>
-            )}
+            // Render Playing Screen
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                    <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden border border-emerald-100">
+                        {/* Progress */}
+                        <div className="bg-slate-100 h-2 w-full">
+                            <div className="bg-emerald-500 h-full transition-all duration-500" style={{width: `${(currentQIndex / questions.length) * 100}%`}}></div>
+                        </div>
+                        
+                        {/* Header */}
+                        <div className="px-6 py-4 flex justify-between items-center border-b border-slate-100">
+                            <div className="text-sm font-bold text-slate-400 uppercase">Dæmi {currentQIndex + 1} / {questions.length}</div>
+                            <div className="flex items-center space-x-2 bg-emerald-50 px-3 py-1 rounded-full text-emerald-700 font-bold text-sm">
+                                <span>{score} stig</span>
+                            </div>
+                        </div>
 
-            {/* INPUT AREA: Multiple Choice (Used for standard & visual-ratio) */}
-            {(currentQ.type === 'multiple-choice' || currentQ.type === 'visual-ratio') && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                {currentQ.options.map((option, idx) => {
-                  let styleClass = "border-slate-200 hover:border-emerald-400 hover:bg-slate-50 text-slate-700"; 
-                  
-                  if (selectedOption === idx) {
-                    styleClass = "border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-200";
-                  }
+                        <div className="p-6 md:p-10">
+                            {/* Topic */}
+                            <div className="flex justify-center mb-6">
+                                <div className="inline-flex items-center space-x-2 bg-slate-100 px-4 py-1.5 rounded-full text-sm font-semibold text-slate-600">
+                                    <span className="text-emerald-500">{q.icon}</span>
+                                    <span>{q.topic}</span>
+                                </div>
+                            </div>
 
-                  if (showFeedback) {
-                    if (idx === currentQ.correctIndex) {
-                      styleClass = "border-green-500 bg-green-100 text-green-900 ring-2 ring-green-200 font-bold";
-                    } else if (selectedOption === idx) {
-                      styleClass = "border-red-500 bg-red-100 text-red-900 opacity-70";
-                    } else {
-                      styleClass = "border-slate-100 text-slate-400 opacity-50";
-                    }
-                  }
+                            {/* Question */}
+                            <h2 className="text-2xl font-bold text-center text-slate-800 mb-8">{q.question}</h2>
 
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => !showFeedback && setSelectedOption(idx)}
-                      disabled={showFeedback}
-                      className={`
-                        relative p-5 rounded-2xl text-lg font-medium border-2 transition-all duration-200 text-left
-                        ${styleClass}
-                      `}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>{option}</span>
-                        {showFeedback && idx === currentQ.correctIndex && <CheckCircle className="text-green-600 w-6 h-6" />}
-                        {showFeedback && selectedOption === idx && idx !== currentQ.correctIndex && <XCircle className="text-red-500 w-6 h-6" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                            {/* Visuals */}
+                            {q.type === 'visual-ratio' && (
+                                <div className="mb-8 p-6 bg-slate-50 rounded-xl flex flex-col items-center">
+                                    <div className="flex gap-2 mb-4 flex-wrap justify-center">
+                                        {[...Array(q.visualData.green)].map((_,i) => <div key={i} className="w-8 h-8 rounded-full bg-green-500 border-2 border-green-600 flex items-center justify-center text-white text-xs font-bold">G</div>)}
+                                    </div>
+                                    <div className="w-full h-0.5 bg-slate-200 mb-4"></div>
+                                    <div className="flex gap-2 flex-wrap justify-center">
+                                        {[...Array(q.visualData.purple)].map((_,i) => <div key={i} className="w-8 h-8 rounded-full bg-purple-500 border-2 border-purple-600 flex items-center justify-center text-white text-xs font-bold">F</div>)}
+                                    </div>
+                                </div>
+                            )}
 
-            {/* Action Bar */}
-            <div className="flex justify-center md:justify-end">
-              {!showFeedback ? (
-                <button
-                  onClick={submitAnswer}
-                  disabled={currentQ.type !== 'input' ? selectedOption === null : !inputAnswer}
-                  className={`
-                    w-full md:w-auto py-4 px-10 rounded-xl font-bold text-white text-lg transition-all shadow-lg
-                    ${(currentQ.type !== 'input' ? selectedOption !== null : inputAnswer)
-                      ? 'bg-emerald-600 hover:bg-emerald-700 hover:-translate-y-1' 
-                      : 'bg-slate-300 cursor-not-allowed shadow-none'}
-                  `}
-                >
-                  Svara
-                </button>
-              ) : (
-                <button
-                  onClick={nextQuestion}
-                  autoFocus
-                  className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white py-4 px-10 rounded-xl font-bold shadow-lg flex items-center justify-center transition-all hover:-translate-y-1"
-                >
-                  {currentQuestionIndex < randomizedQuestions.length - 1 ? "Næsta spurning" : "Sjá niðurstöður"} 
-                  <ArrowRight className="ml-3 w-5 h-5" />
-                </button>
-              )}
-            </div>
-            
-            {/* Feedback Section */}
-            {showFeedback && (
-              <div className={`mt-8 p-6 rounded-2xl animate-slideUp ${isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
-                <div className="flex items-start space-x-4">
-                  <div className={`mt-1 p-2 rounded-full ${isCorrect ? 'bg-green-200' : 'bg-red-200'}`}>
-                    {isCorrect ? <CheckCircle className="w-6 h-6 text-green-700" /> : <XCircle className="w-6 h-6 text-red-700" />}
-                  </div>
-                  <div>
-                    <h3 className={`font-bold text-lg mb-2 ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>
-                      {isCorrect ? 'Rétt!' : 'Því miður...'}
-                    </h3>
-                    <p className="text-slate-700 leading-relaxed text-lg whitespace-pre-line">
-                      {currentQ.explanation}
-                    </p>
-                  </div>
+                            {/* Inputs */}
+                            {q.type === 'input' && (
+                                <div className="mb-10 flex justify-center">
+                                    <input 
+                                        type="text" 
+                                        value={inputAnswer}
+                                        onChange={e => setInputAnswer(e.target.value)}
+                                        onKeyDown={e => {
+                                            if(e.key === 'Enter') {
+                                                if(!showFeedback && inputAnswer) submit();
+                                                else if(showFeedback) next();
+                                            }
+                                        }}
+                                        disabled={showFeedback}
+                                        placeholder="Skrifaðu svar..."
+                                        className={`w-full max-w-xs text-center text-2xl p-4 rounded-xl border-2 outline-none transition-all ${
+                                            showFeedback 
+                                            ? (isCorrect ? 'border-green-500 bg-green-50 text-green-800' : 'border-red-500 bg-red-50 text-red-800')
+                                            : 'border-slate-300 focus:border-emerald-500'
+                                        }`}
+                                        autoFocus
+                                    />
+                                </div>
+                            )}
+
+                            {(q.type === 'multiple-choice' || q.type === 'visual-ratio') && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                                    {q.options.map((opt, idx) => {
+                                        let cls = "border-slate-200 hover:border-emerald-400 text-slate-700";
+                                        if(selectedOption === idx) cls = "border-emerald-500 bg-emerald-50 text-emerald-900";
+                                        if(showFeedback) {
+                                            if(idx === q.correctIndex) cls = "border-green-500 bg-green-100 text-green-900 font-bold";
+                                            else if(selectedOption === idx) cls = "border-red-500 bg-red-100 text-red-900 opacity-70";
+                                            else cls = "border-slate-100 text-slate-400 opacity-50";
+                                        }
+                                        return (
+                                            <button key={idx} onClick={() => !showFeedback && setSelectedOption(idx)} disabled={showFeedback}
+                                                className={`p-4 rounded-xl text-lg font-medium border-2 transition-all text-left flex justify-between items-center ${cls}`}>
+                                                {opt}
+                                                {showFeedback && idx === q.correctIndex && <span className="text-green-600"><Icons.Check /></span>}
+                                                {showFeedback && selectedOption === idx && idx !== q.correctIndex && <span className="text-red-500"><Icons.X /></span>}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Action Bar */}
+                            <div className="flex justify-center md:justify-end">
+                                {!showFeedback ? (
+                                    <button onClick={submit} disabled={q.type === 'input' ? !inputAnswer : selectedOption === null}
+                                        className={`px-8 py-3 rounded-xl font-bold text-white text-lg transition-all shadow-lg ${
+                                            (q.type === 'input' ? inputAnswer : selectedOption !== null) 
+                                            ? 'bg-emerald-600 hover:bg-emerald-700 hover:-translate-y-1' 
+                                            : 'bg-slate-300 cursor-not-allowed'
+                                        }`}>
+                                        Svara
+                                    </button>
+                                ) : (
+                                    <button onClick={next} autoFocus className="px-8 py-3 rounded-xl font-bold text-white text-lg bg-slate-800 hover:bg-slate-900 shadow-lg flex items-center hover:-translate-y-1 transition-all">
+                                        <span>{currentQIndex < questions.length - 1 ? "Næsta" : "Ljúka"}</span>
+                                        <span className="ml-2"><Icons.ArrowRight /></span>
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Feedback */}
+                            {showFeedback && (
+                                <div className={`mt-8 p-6 rounded-2xl animate-fadeIn ${isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
+                                    <div className="flex gap-4">
+                                        <div className={`p-2 rounded-full h-fit ${isCorrect ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'}`}>
+                                            {isCorrect ? <Icons.Check /> : <Icons.X />}
+                                        </div>
+                                        <div>
+                                            <h3 className={`font-bold text-lg ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>{isCorrect ? 'Rétt!' : 'Því miður...'}</h3>
+                                            <p className="text-slate-700 mt-1 whitespace-pre-line">{q.explanation}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+            );
+        }
 
-        {/* --- FINISHED SCREEN --- */}
-        {gameState === 'finished' && (
-          <div className="p-12 text-center flex flex-col items-center animate-fadeIn">
-            <div className="w-32 h-32 bg-yellow-100 rounded-full flex items-center justify-center mb-8 ring-8 ring-yellow-50">
-              <Trophy className="w-16 h-16 text-yellow-600" />
-            </div>
-            <h2 className="text-4xl font-bold text-slate-800 mb-2">Æfingu Lokið!</h2>
-            <p className="text-slate-500 mb-10 text-lg">Hér eru niðurstöður úr Kafla 3.</p>
-            
-            <div className="bg-slate-50 p-8 rounded-3xl border border-slate-200 mb-10 w-full max-w-sm">
-              <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Þín Stig</div>
-              <div className="text-6xl font-black text-emerald-600 mb-4">{score} <span className="text-2xl text-slate-400 font-medium">/ {randomizedQuestions.length}</span></div>
-              
-              <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden mb-4">
-                <div 
-                  className={`h-full ${score === randomizedQuestions.length ? 'bg-green-500' : 'bg-emerald-500'}`} 
-                  style={{ width: `${(score / randomizedQuestions.length) * 100}%` }}
-                ></div>
-              </div>
-
-              <p className="text-slate-700 font-medium">
-                {score === randomizedQuestions.length 
-                  ? "Framúrskarandi! Þú ert komin(n) með þetta. 🌟" 
-                  : "Vel gert! Haltu áfram að æfa deilingu og margföldun."}
-              </p>
-            </div>
-
-            <button 
-              onClick={startGame}
-              className="bg-white border-2 border-slate-200 hover:border-emerald-500 hover:text-emerald-600 text-slate-600 font-bold py-4 px-10 rounded-2xl transition-all flex items-center shadow-sm hover:shadow-md"
-            >
-              <RefreshCcw className="w-5 h-5 mr-3" />
-              Taka nýjan leik
-            </button>
-          </div>
-        )}
-      </div>
-      
-      <div className="fixed bottom-4 text-slate-400 text-xs font-medium tracking-wide pointer-events-none opacity-60">
-        Stika 3a • Kafli 3: Margföldun og deiling
-      </div>
-    </div>
-  );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MathGame />);
+    </script>
+</body>
+</html>
